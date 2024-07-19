@@ -17,7 +17,11 @@ V -> "smiled" | "tell" | "were"
 """
 
 NONTERMINALS = """
-S -> N V
+S -> NP VP
+AP -> Adj AP | Adj
+NP -> N | Det NP | AP NP
+VP -> V | V NP | V NP PP | Adv VP | VP Conj VP
+PP -> P NP
 """
 
 grammar = nltk.CFG.fromstring(NONTERMINALS + TERMINALS)
@@ -25,7 +29,6 @@ parser = nltk.ChartParser(grammar)
 
 
 def main():
-
     # If filename specified, read sentence from file
     if len(sys.argv) == 2:
         with open(sys.argv[1]) as f:
@@ -72,6 +75,7 @@ def preprocess(sentence):
 
     return list(filtered)
 
+
 def np_chunk(tree):
     """
     Return a list of all noun phrase chunks in the sentence tree.
@@ -80,11 +84,10 @@ def np_chunk(tree):
     noun phrases as subtrees.
     """
     np_list = []
-    for chunk in tree.subtrees():
-        if chunk.label() == "NP":
-            child_np = filter(lambda t: t.label() == "NP", list(chunk.subtrees()))
-            if len(list(child_np)) == 0:
-                np_list.append(chunk)
+    for chunk in tree.subtrees(filter=lambda t: t.label() == "NP"):
+        # makes sure it is most child NP available
+        if len(list(chunk.subtrees(filter=lambda t: t.label() == "NP"))) == 1:
+            np_list.append(chunk)
 
     return np_list
 
